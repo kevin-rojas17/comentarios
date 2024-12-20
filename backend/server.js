@@ -24,6 +24,7 @@ const connectDB = async () => {
         process.exit(1); // Termina el proceso si no se puede conectar a la base de datos
     }
 };
+
 connectDB();
 
 // Rutas principales
