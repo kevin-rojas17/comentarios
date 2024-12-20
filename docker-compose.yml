@@ -9,8 +9,12 @@ services:
       - MONGO_URI=mongodb+srv://TOMut4mn3tPvITie:TOMut4mn3tPvITie@comedor.zhardxq.mongodb.net/?retryWrites=true&w=majority&appName=comedor
     restart: always
     dns:
-      - 8.8.8.8  # DNS de Google
-      - 8.8.4.4  # DNS de Google
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      - elasticsearch
+    networks:
+      - my_network
 
   frontend:
     build:
@@ -18,8 +22,60 @@ services:
     ports:
       - "80:80"
     dns:
-      - 8.8.8.8  # DNS de Google
-      - 8.8.4.4  # DNS de Google
+      - 8.8.8.8
+      - 8.8.4.4
+    networks:
+      - my_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - my_network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.12.0
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    depends_on:
+      - elasticsearch
+    networks:
+      - my_network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - my_network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
 networks:
   my_network:
     driver: bridge
+
+volumes:
+  elasticsearch-data:
