@@ -1,0 +1,52 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    # Backend
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Run backend tests
+      working-directory: ./backend
+      run: npm test
+      
+    # Frontend (Svelte app)
+    - name: Install frontend dependencies
+      working-directory: ./svelte-comment-app
+      run: npm ci
+
+    - name: Build Svelte app
+      working-directory: ./svelte-comment-app
+      run: npm run build
+
+    - name: Run frontend tests
+      working-directory: ./svelte-comment-app
+      run: npm test
+
+    # Docker build (opcional)
+    - name: Build Docker images
+      run: docker compose build
+
+    # Despliegue (ejemplo, ajusta según tu caso)
+    - name: Deploy
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: echo "Add your deployment steps here"
+      # Aquí puedes agregar los pasos para desplegar a tu servidor
