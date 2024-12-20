@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb+srv://TOMut4mn3tPvITie:TOMut4mn3tPvITie@comedor.zhardxq.mongodb.net/?retryWrites=true&w=majority&appName=comedor
+    restart: always
+    dns:
+      - 8.8.8.8  # DNS de Google
+      - 8.8.4.4  # DNS de Google
+
+  frontend:
+    build:
+      context: ./svelte-comment-app
+    ports:
+      - "80:80"
+    dns:
+      - 8.8.8.8  # DNS de Google
+      - 8.8.4.4  # DNS de Google
+networks:
+  my_network:
+    driver: bridge
