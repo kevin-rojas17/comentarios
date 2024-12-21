@@ -9,7 +9,14 @@ const commentsRouter = require('./comments');
 const winston = require('winston');
 const { createLogger, format, transports } = winston;
 const { LogstashTransport } = require('winston-logstash-transport'); // Importa LogstashTransport
-
+const apm = require('elastic-apm-node').start({
+    serviceName: process.env.ELASTIC_APM_SERVICE_NAME || 'backend-service',
+    serverUrl: process.env.ELASTIC_APM_SERVER_URL || 'http://apm-server:8200',
+    environment: process.env.ELASTIC_APM_ENVIRONMENT || 'development',
+    secretToken: process.env.ELASTIC_APM_SECRET_TOKEN,
+    active: process.env.NODE_ENV !== 'test',
+    transactionSampleRate: 1.0,
+});
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -29,7 +36,7 @@ const logger = createLogger({
         }),
         // Log a Logstash usando LogstashTransport
         new LogstashTransport({
-            host: 'localhost', // Cambia 'localhost' al host correcto de Logstash
+            host: 'logstash', // Cambia 'localhost' al host correcto de Logstash
             port: 5000,        // Cambia 5000 al puerto configurado en Logstash
             applicationName: 'backend'
         })
@@ -37,12 +44,14 @@ const logger = createLogger({
 });
 
 // Middleware para logging de requests
+app.use(apm.middleware.connect());
 app.use((req, res, next) => {
     logger.info('Incoming request', {
         method: req.method,
         path: req.path,
         ip: req.ip,
-        headers: req.headers
+        headers: req.headers,
+        transaction: apm.currentTransaction ? apm.currentTransaction.id : null
     });
     next();
 });
@@ -90,7 +99,8 @@ app.use((err, req, res, next) => {
         error: err.message,
         stack: err.stack,
         path: req.path,
-        method: req.method
+        method: req.method,
+        transaction: apm.currentTransaction ? apm.currentTransaction.id : null
     });
     res.status(500).json({ error: 'Internal Server Error' });
 });

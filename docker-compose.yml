@@ -73,6 +73,21 @@ services:
       - 8.8.8.8
       - 8.8.4.4
 
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:8.12.0
+    ports:
+      - "8200:8200"
+    environment:
+      - output.elasticsearch.hosts=["elasticsearch:9200"]
+      - apm-server.secret_token=your-secret-token
+    depends_on:
+      - elasticsearch
+    networks:
+      - my_network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
 networks:
   my_network:
     driver: bridge
